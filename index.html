@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>NEON RUNNER</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080b1c;color:white;font-family:Arial;text-align:center}
+header{padding:25px 10px 12px}
+h1{font-size:34px;letter-spacing:5px;color:#60f5ff;text-shadow:0 0 20px #00cfff;margin:8px}
+small{color:#999ecb;letter-spacing:3px}
+.stats{display:flex;justify-content:center;gap:10px;margin:15px}
+.stat{background:#171b36;border:1px solid #414875;border-radius:14px;padding:12px;min-width:95px}
+.stat span{display:block;color:#999ecb;font-size:10px}
+.stat b{display:block;font-size:23px;color:#60f5ff;margin-top:6px}
+canvas{width:94vw;max-width:430px;height:auto;border:1px solid #454a8b;border-radius:20px;background:#10142b;touch-action:none;box-shadow:0 0 30px #3432a0}
+button{border:0;border-radius:14px;padding:16px 38px;background:linear-gradient(100deg,#00cfff,#9d4dff);color:white;font-weight:bold;font-size:16px;letter-spacing:2px;margin:18px;box-shadow:0 0 25px #5d49df}
+p{color:#a4a9ce;font-size:13px}
+</style>
+</head>
+<body>
+<header><small>ARCADE EXPERIENCE</small><h1>NEON RUNNER</h1><small>DODGE • SURVIVE • SCORE</small></header>
+<div class="stats">
+<div class="stat"><span>SCORE</span><b id="score">0</b></div>
+<div class="stat"><span>BEST</span><b id="best">0</b></div>
+<div class="stat"><span>LIVES</span><b id="lives">❤️❤️❤️</b></div>
+</div>
+<canvas id="game" width="430" height="560"></canvas>
+<br><button onclick="start()">▶ PLAY NOW</button>
+<p>Drag your finger to move. Dodge the falling red blocks!</p>
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+let player={x:215,y:490},blocks=[],score=0,lives=3,active=false,frame=0;
+let best=Number(localStorage.neonBest||0);
+document.getElementById('best').textContent=best;
+
+function move(e){
+ const r=c.getBoundingClientRect();
+ player.x=Math.max(22,Math.min(408,(e.clientX-r.left)*430/r.width));
+}
+c.addEventListener('pointermove',move);
+c.addEventListener('pointerdown',move);
+
+function start(){
+ score=0;lives=3;frame=0;blocks=[];active=true;
+ player.x=215;
+ document.getElementById('score').textContent=0;
+ document.getElementById('lives').textContent='❤️❤️❤️';
+}
+
+function draw(){
+ ctx.clearRect(0,0,430,560);
+ for(let i=0;i<65;i++){
+  let x=(i*73)%430,y=(i*127+frame*.3)%560;
+  ctx.fillStyle='#565c9c';ctx.fillRect(x,y,2,2);
+ }
+ ctx.strokeStyle='#272c55';
+ for(let x=0;x<430;x+=43){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,560);ctx.stroke()}
+ ctx.shadowBlur=25;ctx.shadowColor='#00eaff';
+ ctx.fillStyle='#43f4ff';
+ ctx.beginPath();ctx.moveTo(player.x,player.y-20);
+ ctx.lineTo(player.x-19,player.y+17);
+ ctx.lineTo(player.x+19,player.y+17);ctx.closePath();ctx.fill();
+ ctx.shadowBlur=0;
+ blocks.forEach(b=>{
+  ctx.shadowBlur=18;ctx.shadowColor='#ff315c';ctx.fillStyle='#ff315c';
+  ctx.fillRect(b.x,b.y,b.w,b.h);ctx.shadowBlur=0;
+ });
+ if(!active){
+  ctx.textAlign='center';ctx.fillStyle='white';
+  ctx.font='bold 25px Arial';ctx.fillText('NEON RUNNER',215,235);
+  ctx.font='15px Arial';ctx.fillStyle='#aab4e8';
+  ctx.fillText('Dodge the red blocks!',215,270);
+ }
+}
+function update(){
+ frame++;
+ if(active){
+  if(frame%32===0){
+   blocks.push({x:Math.random()*390,y:-25,w:22+Math.random()*18,h:22+Math.random()*18,speed:3+Math.min(score/10,7)});
+  }
+  blocks.forEach(b=>b.y+=b.speed);
+  blocks=blocks.filter(b=>{
+   if(b.y>560){score++;document.getElementById('score').textContent=score;return false}
+   if(b.x<player.x+14&&b.x+b.w>player.x-14&&b.y<player.y+17&&b.y+b.h>player.y-17){
+    lives--;document.getElementById('lives').textContent='❤️'.repeat(lives);
+    return false;
+   }
+   return true;
+  });
+  if(lives<=0){
+   active=false;
+   if(score>best){best=score;localStorage.neonBest=best;document.getElementById('best').textContent=best}
+  }
+ }
+ draw();
+ if(!active&&lives<=0){
+  ctx.fillStyle='white';ctx.textAlign='center';ctx.font='bold 28px Arial';
+  ctx.fillText('GAME OVER',215,320);
+  ctx.font='18px Arial';ctx.fillText('Score: '+score,215,350);
+ }
+ requestAnimationFrame(update);
+}
+update();
+</script>
+</body>
+</html>
